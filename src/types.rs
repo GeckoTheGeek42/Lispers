@@ -13,6 +13,7 @@ pub enum LispToken {
 	Function(String),//:.*
 	Symbol(String),//.* ??
 	List(Vec<LispToken>),
+	Executable(String, Vec<LispToken>),
 }
 
 impl LispToken {
@@ -26,6 +27,7 @@ impl LispToken {
 			&LispToken::Function(ref s) => s.clone(),
 			&LispToken::Symbol(ref s) => s.clone(),
 			&LispToken::List(ref l) => l.to_string(),
+			&LispToken::Executable(ref f, ref a) => format!("({} {})", f, a),
 		}
 	}
 
@@ -35,16 +37,30 @@ impl LispToken {
 			&ParserToken::List(ref mut l) => LispToken::List( l.iter_mut().map( |e| LispToken::from_parser_token(e) ).collect::<Vec<LispToken>>() ),
 		}
 	}
+
+	pub fn find_executable(&self) -> LispToken {
+		match self {
+			&LispToken::List(ref l) => match l[0] {
+				LispToken::Function(ref f) => LispToken::Executable(f.clone(), l.iter().skip(1).map(|ref t| t.find_executable()).collect()),
+				_ => LispToken::List(l.clone().iter().map(|ref t| t.find_executable()).collect())
+			},
+			t => t.clone(),
+		}
+	}
 }
 
 impl FromStr for LispToken {
 	fn from_str(s: &str) -> Option<LispToken> {
+		let str_re = regex!(r"^'(.*)'$");
+		let var_re = regex!(r"^&(.*)$");
+		let func_re = regex!(r"^\$(.*)$");
+
 		from_str(s).map(|e| LispToken::Integer(e))
 			.or(from_str(s).map(|e| LispToken::FloatingPoint(e)))
 			.or(from_str(s).map(|e| LispToken::Boolean(e)))
-			.or(regex!(r"^'(.*)'$").captures(s).map(|c| LispToken::String(c.at(1).to_string())))
-			.or(regex!(r"^\$(.*)$").captures(s).map(|c| LispToken::Variable(c.at(1).to_string())))
-			.or(regex!(r"^:(.*)$").captures(s).map(|c| LispToken::Function(c.at(1).to_string())))
+			.or(str_re.captures(s).map(|c| LispToken::String(c.at(1).to_string())))
+			.or(var_re.captures(s).map(|c| LispToken::Variable(c.at(1).to_string())))
+			.or(func_re	.captures(s).map(|c| LispToken::Function(c.at(1).to_string())))
 			.or(Some(LispToken::Symbol(s.to_string())))
 	}
 }
@@ -60,10 +76,17 @@ impl Clone for LispToken {
 			&LispToken::Function(ref s) => LispToken::Function(s.clone()),
 			&LispToken::Symbol(ref s) => LispToken::Symbol(s.clone()),
 			&LispToken::List(ref l) => LispToken::List(l.clone()),
+			&LispToken::Executable(ref f, ref a) => LispToken::Executable(f.clone(), a.clone())
 		}
 	}
 }
 
 pub struct LispFunc<'a> {
 	pub funct: Box<Fn(&ExecutionEnvironment, &LispToken) -> LispToken + 'a>
+}
+
+impl<'a> LispFunc<'a> {
+	pub fn call(&self, ee: &ExecutionEnvironment, args: &LispToken) -> LispToken {
+		self.funct.call((ee, args))
+	}
 }

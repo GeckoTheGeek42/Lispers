@@ -17,20 +17,13 @@ impl<'a> ExecutionEnvironment<'a> {
 	}
 
 	pub fn exec(&mut self, script: Vec<LispToken>) -> Vec<LispToken> {
-		script.iter().map(|token| self.var_map(token)).collect()
+		script.iter()
+			.map(|token| self.var_map(token))
+			.map(|token| self.eval_expr(&token))
+			.collect()
 	}
 
-	// fn var_map(&mut self, script: &Vec<LispToken>) -> Vec<LispToken> {
-	// 	script.iter().map(|token| {
-	// 			match token {
-	// 				&LispToken::Variable(ref v) => self.get_var(v.as_slice()).unwrap(),
-	// 				&LispToken::List(ref l) => LispToken::List(self.var_map(l)),
-	// 				token_else => token_else.clone(),
-	// 			}
-	// 		}).collect()
-	// }
-
-	fn var_map(&mut self, token: &LispToken) -> LispToken {
+	fn var_map(&self, token: &LispToken) -> LispToken {
 		match token {
 			&LispToken::Variable(ref v) => self.get_var( v.as_slice() ).unwrap(),
 			&LispToken::List(ref l) => LispToken::List( l.iter().map( |t| self.var_map(t) ).collect() ),
@@ -38,8 +31,11 @@ impl<'a> ExecutionEnvironment<'a> {
 		}
 	}
 
-	fn eval_expr(&mut self, token: &LispToken) -> LispToken {
-		//TODO: wtf???
+	fn eval_expr(&self, token: &LispToken) -> LispToken {
+		match token.find_executable() {
+			LispToken::Executable(f, a) => self.get_fn(f.as_slice()).unwrap().call(self, &LispToken::List(a.iter().map(|t| self.eval_expr(t)).collect())),
+			t => t,
+		}
 	}
 
 	pub fn get_var(&self, k: &str) -> Result<LispToken, &str> {
