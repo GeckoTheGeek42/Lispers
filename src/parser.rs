@@ -2,15 +2,35 @@
 extern crate regex_macros;
 extern crate regex;
 
+use types::LispToken;
+
 #[deriving(Show)]
 pub enum ParserToken {
     Symbol(String),
     List(Vec<ParserToken>),
 }
 
+impl ParserToken {
+	pub fn pretty_print(&self, indent: &String) {
+		match self {
+			&ParserToken::Symbol(ref s) => println!("{}|- {}", indent, s),
+			&ParserToken::List(ref v) => {
+				println!("{}.<---", indent);
+				for t in v.iter() { t.pretty_print( &format!("..{}", indent) ) }
+				println!("{}.--->", indent);
+			}
+		}
+	}
+
+	pub fn to_lisp_token(&self) -> LispToken {
+		LispToken::from_parser_token(self)
+	}
+}
+
 #[deriving(Show)]
 pub struct ParserBuffer {
 	paren_count: u8,
+	in_quote: bool,
     token: String,
     tokens: Vec<ParserToken>,
 }
@@ -18,6 +38,7 @@ pub struct ParserBuffer {
 impl ParserBuffer {
 	fn new() -> ParserBuffer {
 		ParserBuffer {
+			in_quote: false,
 			paren_count: 0,
 			tokens: Vec::new(),
 			token: String::new(),
@@ -45,6 +66,19 @@ impl ParserBuffer {
 		}
 	}
 
+	fn push_quote(&mut self) {
+		self.token.push('\'');
+		if self.in_quote {
+			println!("pushin close_quote");
+			self.in_quote = false;
+			self.tokens.push( ParserToken::Symbol(self.token.clone()) );
+			self.token = String::new();	
+		} else {
+			println!("pushin open_quote");
+			self.in_quote = true
+		}
+	}
+
 	fn push_char(&mut self, c: char) {
 		println!("pushin char:'{}'", c);
 		self.token.push(c);
@@ -54,14 +88,19 @@ impl ParserBuffer {
 		if self.token == "" {
 			return;
 		}
+		if self.in_quote {
+			println!("pushin space");
+			self.token.push(' ');
+			return;
+		}
 		if self.paren_count > 0 {
 			println!("pushin space");
 			self.token.push(' ');
-		} else {
-			println!("pushin symbol:'{}'", self.token.clone());
-			self.tokens.push(ParserToken::Symbol(self.token.clone()));
-			self.token = String::new();
+			return;
 		}
+		println!("pushin symbol:'{}'", self.token.clone());
+		self.tokens.push(ParserToken::Symbol(self.token.clone()));
+		self.token = String::new();
 	}
 }
 
@@ -79,6 +118,7 @@ pub fn parse_line(code_str: &str) -> ParserToken {
 			' ' => acc_copy.push_symbol(),
 			'(' => acc_copy.push_open_paren(),
 			')' => acc_copy.push_close_paren(),
+			'\'' => acc_copy.push_quote(),
 			c => acc_copy.push_char(c),
 		};
 		acc_copy

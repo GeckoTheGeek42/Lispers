@@ -9,6 +9,9 @@ pub struct ExecutionEnvironment<'a> {
 impl<'a> ExecutionEnvironment<'a> {
 	pub fn new() -> ExecutionEnvironment<'a> {
 		let functs = HashMap::new();
+		// functs.insert("+", |ee, args| {
+			
+		// });
 
 		ExecutionEnvironment {
 			variables: HashMap::new(),
@@ -32,9 +35,13 @@ impl<'a> ExecutionEnvironment<'a> {
 	}
 
 	fn eval_expr(&self, token: &LispToken) -> LispToken {
-		match token.find_executable() {
-			LispToken::Executable(f, a) => self.get_fn(f.as_slice()).unwrap().call(self, &LispToken::List(a.iter().map(|t| self.eval_expr(t)).collect())),
-			t => t,
+		println!("Parsing:");
+		token.pretty_print(&String::new());
+		match token {
+			&LispToken::Executable(ref f, ref a) => 
+				self.get_fn( f.as_slice() ).unwrap()
+					.call(self, &LispToken::List( a.iter().map(|t| self.eval_expr(t)).collect() )),
+			t => t.clone(),
 		}
 	}
 
