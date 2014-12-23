@@ -55,7 +55,7 @@ impl ParserBuffer {
 			return;
 		}
 		if self.paren_count > 0 {
-			println!("pushin space")
+			println!("pushin space");
 			self.token.push(' ');
 		} else {
 			println!("pushin symbol:'{}'", self.token.clone());

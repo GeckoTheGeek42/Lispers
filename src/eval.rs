@@ -39,18 +39,7 @@ impl<'a> ExecutionEnvironment<'a> {
 	}
 
 	fn eval_expr(&mut self, token: &LispToken) -> LispToken {
-		match token {
-			&LispToken::List(ref list) => {
-				let listi = list.iter();
-				match listi.next() {
-					&LispToken::Function(ref f) => 
-						self.get_fn( f.as_slice() ).unwrap()
-							.funct.call( ( self, &LispToken::List(listi.map(|t| self.eval_expr(t))) ) ),
-					t => t.clone(),
-				}
-			},
-			t => t.clone(),
-		}
+		//TODO: wtf???
 	}
 
 	pub fn get_var(&self, k: &str) -> Result<LispToken, &str> {
