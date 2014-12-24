@@ -1,5 +1,6 @@
 #![feature(unboxed_closures)]
 #![feature(phase)]
+#![feature(macro_rules)]
 extern crate regex;
 
 pub mod types;

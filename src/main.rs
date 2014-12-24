@@ -14,6 +14,10 @@ use lispers::eval::ExecutionEnvironment;
 use test::Bencher;
 
 fn main() {
+}
+
+#[test]
+fn test_all() {
 	let test_str = "$concat \n($sqrt (+ (- 72 (* 19 &foo)) ($cross_product (&a &b 32) (71 1891 &c) (&d &e &f)) 2983 98234 9823)) 'wassup bro' 'idk man' 'this lisp thing is wierd'";
 	let parser_tokens = test_parsing(test_str, true);
 	let lisp_tokens = test_typing(&parser_tokens, true);
