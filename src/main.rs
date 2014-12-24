@@ -53,20 +53,21 @@ fn test_exec(lisp_tokens: &LispToken, print: bool) {
 } 
 
 #[bench]
-fn bench_combo(t: &mut Bencher) {
-	let test_str = "$concat ($sqrt (+ (- 72 (* 19 &foo)) ($cross_product (&a &b 32) (71 1891 &c) (&d &e &f)) 2983 98234 9823)) 'wassup bro' 'idk man' 'this lisp thing is wierd'";
-	t.iter(|| { test_typing( &test_parsing(test_str, false), false ) })
+fn bench_exec(t: &mut Bencher) {
+	let test_str = "$concat ($sqrt (+ (- 72.0 (* 19 &foo)) (* &a &b &c &d &e &f)))) 'wassup bro' 'idk man' 'this lisp thing is wierd'";
+	let typed = test_typing( &test_parsing(test_str, false), false );
+	t.iter(|| { test_exec(&typed, false) });
 }
 
 #[bench]
 fn bench_parse(t: &mut Bencher) {
-	let test_str = "$concat ($sqrt (+ (- 72 (* 19 &foo)) ($cross_product (&a &b 32) (71 1891 &c) (&d &e &f)) 2983 98234 9823)) 'wassup bro' 'idk man' 'this lisp thing is wierd'";
+	let test_str = "$concat ($sqrt (+ (- 72.0 (* 19 &foo)) (* &a &b &c &d &e &f)))) 'wassup bro' 'idk man' 'this lisp thing is wierd'";
 	t.iter(|| { test_parsing(test_str, false) })
 }
 
 #[bench]
 fn bench_types(t: &mut Bencher) {
-	let test_str = "$concat ($sqrt (+ (- 72 (* 19 &foo)) ($cross_product (&a &b 32) (71 1891 &c) (&d &e &f)) 2983 98234 9823)) 'wassup bro' 'idk man' 'this lisp thing is wierd'";
+	let test_str = "$concat ($sqrt (+ (- 72.0 (* 19 &foo)) (* &a &b &c &d &e &f)))) 'wassup bro' 'idk man' 'this lisp thing is wierd'";
 	let parsed = test_parsing(test_str, false);
 	t.iter(|| { test_typing( &parsed, false ) })
 }

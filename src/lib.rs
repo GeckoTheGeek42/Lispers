@@ -9,8 +9,8 @@ pub mod eval;
 pub mod init;
 
 fn debug(s: &str) {
-	print!("{}", s);
+	// print!("{}", s);
 }
 fn debugln(s: &str) {
-	println!("{}", s);
+	// println!("{}", s);
 }

@@ -31,7 +31,7 @@ impl<'a> ExecutionEnvironment<'a> {
 
 	fn var_map(&self, token: &LispToken) -> LispToken {
 		debugln("Var_map: ");
-		token.pretty_print(&String::new());
+//		token.pretty_print(&String::new());
 		match token {
 			&LispToken::Variable(ref v) => self.get_var( v.as_slice() ).unwrap(),
 			&LispToken::List(ref l) => LispToken::List( l.iter().map( |t| self.var_map(t) ).collect() ),
@@ -48,9 +48,9 @@ impl<'a> ExecutionEnvironment<'a> {
 			t => t.clone(),
 		};
 
-		println!("Evaluating: "); //DEBUG
-		token.pretty_print(&String::new()); //DEBUG
-		println!(":: {}", r);
+		debugln("Evaluating: "); //DEBUG
+//		token.pretty_print(&String::new()); //DEBUG
+		debugln(format!(":: {}", r).as_slice());
 
 		return r;
 	}
