@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use types::{LispToken, LispFunc};
+use std::num::Float;
 
 macro_rules! lisp_func(
 	($ee:ident, $args:ident => $fun:expr) => (LispFunc::new(box |$ee, args| -> LispToken {
@@ -25,16 +26,16 @@ macro_rules! lisp_fold_func(
 
 macro_rules! lisp_map_func(
 	($ee:ident, $args:ident => $arg:ident => $map:expr) => 
-		( lisp_func!( $ee, $args => LispToken::List(args.iter().map(|$arg| { $map }.collect()) ) ) )
+		( lisp_func!( $ee, $args => LispToken::List($args.iter().map(|$arg| { $map }).collect() ) ) )
 );
 
 macro_rules! lisp_filter_func(
 	($ee:ident, $args:ident => $arg:ident => $filter:expr) => 
-		( lisp_func!( $ee, $args => LispToken::List(args.iter().map(|$arg| { $filter }.collect()) ) ) )
+		( lisp_func!( $ee, $args => LispToken::List($args.iter().map(|$arg| { $filter }.collect()) ) ) )
 );
 
 macro_rules! check_arg(
-	($elem:ident, $arg:pat => $then:expr) => (match $elem {
+	($elem:expr : $arg:pat => $then:expr) => (match $elem {
 		$arg => $then,
 		_ => panic!("Invalid Argument Error")
 	})
@@ -78,4 +79,18 @@ pub fn init_functs(functs: &mut HashMap<&str, LispFunc>) {
 				{ acc + elem.as_str().as_slice() } 
 					: temp => LispToken::String(temp) )
 	);
+	functs.insert("sqrt",
+		lisp_map_func!(ee, args => elem => 
+			check_arg!( elem : &LispToken::FloatingPoint(f) => LispToken::FloatingPoint(f.sqrt()) ) )
+	);
+}
+
+pub fn init_vars(vars: &mut HashMap<&str, LispToken>) {
+	vars.insert("foo", LispToken::Integer(32));
+	vars.insert("a", LispToken::Integer(43));
+	vars.insert("b", LispToken::Integer(234));
+	vars.insert("c", LispToken::Integer(23));
+	vars.insert("d", LispToken::Integer(42));
+	vars.insert("e", LispToken::Integer(289));
+	vars.insert("f", LispToken::Integer(182));
 }

@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use types::{LispToken, LispFunc};
-use init::init_functs;
+use init::{init_functs, init_vars};
+use debugln;
 
 pub struct ExecutionEnvironment<'a> {
     variables: HashMap<&'a str, LispToken>,
@@ -10,8 +11,10 @@ pub struct ExecutionEnvironment<'a> {
 impl<'a> ExecutionEnvironment<'a> {
 	pub fn new() -> ExecutionEnvironment<'a> {
 		let mut functs = HashMap::new();
-		let mut vars = HashMap::new();
 		init_functs(&mut functs);
+
+		let mut vars = HashMap::new();
+		init_vars(&mut vars);
 
 		ExecutionEnvironment {
 			variables: vars,
@@ -27,22 +30,29 @@ impl<'a> ExecutionEnvironment<'a> {
 	}
 
 	fn var_map(&self, token: &LispToken) -> LispToken {
+		debugln("Var_map: ");
+		token.pretty_print(&String::new());
 		match token {
 			&LispToken::Variable(ref v) => self.get_var( v.as_slice() ).unwrap(),
 			&LispToken::List(ref l) => LispToken::List( l.iter().map( |t| self.var_map(t) ).collect() ),
+			&LispToken::Executable(ref f, ref l) => LispToken::Executable(f.clone(), l.iter().map( |t| self.var_map(t) ).collect()),
 			token_else => token_else.clone(),
 		}
 	}
 
 	fn eval_expr(&self, token: &LispToken) -> LispToken {
-		println!("Evalutating :"); //DEBUG
-		token.pretty_print(&String::new()); //DEBUG
-		match token {
+		let r = match token {
 			&LispToken::Executable(ref f, ref a) => 
 				self.get_fn( f.as_slice() ).unwrap()
 					.call(self, &LispToken::List( a.iter().map(|t| self.eval_expr(t)).collect() )),
 			t => t.clone(),
-		}
+		};
+
+		println!("Evaluating: "); //DEBUG
+		token.pretty_print(&String::new()); //DEBUG
+		println!(":: {}", r);
+
+		return r;
 	}
 
 	pub fn get_var(&self, k: &str) -> Result<LispToken, String> {

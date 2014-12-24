@@ -14,11 +14,11 @@ use lispers::eval::ExecutionEnvironment;
 use test::Bencher;
 
 fn main() {
+	test_all();
 }
 
-#[test]
 fn test_all() {
-	let test_str = "$concat \n($sqrt (+ (- 72 (* 19 &foo)) ($cross_product (&a &b 32) (71 1891 &c) (&d &e &f)) 2983 98234 9823)) 'wassup bro' 'idk man' 'this lisp thing is wierd'";
+	let test_str = "$concat ($sqrt (+ (- 72.0 (* 19 &foo)) (* &a &b &c &d &e &f)))) 'wassup bro' 'idk man' 'this lisp thing is wierd'";
 	let parser_tokens = test_parsing(test_str, true);
 	let lisp_tokens = test_typing(&parser_tokens, true);
 	let result = test_exec(&lisp_tokens, true);
@@ -49,7 +49,7 @@ fn test_typing(parser_tokens: &ParserToken, print: bool) -> LispToken {
 
 fn test_exec(lisp_tokens: &LispToken, print: bool) {
 	let env = ExecutionEnvironment::new();
-	// let result = env.exec(vec![lisp_tokens]);
+	let result = env.exec(vec![lisp_tokens.clone()]);
 } 
 
 #[bench]
