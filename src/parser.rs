@@ -3,11 +3,12 @@ extern crate regex_macros;
 extern crate regex;
 
 use types::LispToken;
+use {debug, debugln};
 
 #[deriving(Show)]
 pub enum ParserToken {
-    Symbol(String),
-    List(Vec<ParserToken>),
+	Symbol(String),
+	List(Vec<ParserToken>),
 }
 
 impl ParserToken {
@@ -31,8 +32,8 @@ impl ParserToken {
 pub struct ParserBuffer {
 	paren_count: u8,
 	in_quote: bool,
-    token: String,
-    tokens: Vec<ParserToken>,
+	token: String,
+	tokens: Vec<ParserToken>,
 }
 
 impl ParserBuffer {
@@ -46,7 +47,7 @@ impl ParserBuffer {
 	}
 
 	fn push_open_paren(&mut self) {
-		println!("pushin open_paren");
+		debug("( "); 
 		if self.paren_count != 0 {
 			self.token.push('(');
 		}
@@ -54,9 +55,9 @@ impl ParserBuffer {
 	}
 
 	fn push_close_paren(&mut self) {
-		println!("pushin close_paren");
+		debug(") "); 
 		if self.paren_count == 1 {
-			println!("pushin list");
+			debugln("\npushin list"); 
 			self.paren_count = 0;
 			self.tokens.push( parse_line( self.token.as_slice() ) );
 			self.token = String::new();
@@ -69,18 +70,19 @@ impl ParserBuffer {
 	fn push_quote(&mut self) {
 		self.token.push('\'');
 		if self.in_quote {
-			println!("pushin close_quote");
+			debug("' "); 
 			self.in_quote = false;
+			debugln(format!("\npushin symbol:'{}'", self.token.clone()).as_slice()); 
 			self.tokens.push( ParserToken::Symbol(self.token.clone()) );
 			self.token = String::new();	
 		} else {
-			println!("pushin open_quote");
+			debug("` "); 
 			self.in_quote = true
 		}
 	}
 
 	fn push_char(&mut self, c: char) {
-		println!("pushin char:'{}'", c);
+		debug(format!("{} ", c).as_slice()); 
 		self.token.push(c);
 	}
 
@@ -89,16 +91,16 @@ impl ParserBuffer {
 			return;
 		}
 		if self.in_quote {
-			println!("pushin space");
+			debug("_ "); 
 			self.token.push(' ');
 			return;
 		}
 		if self.paren_count > 0 {
-			println!("pushin space");
+			debug("_ "); 
 			self.token.push(' ');
 			return;
 		}
-		println!("pushin symbol:'{}'", self.token.clone());
+		debugln(format!("\npushin symbol:'{}'", self.token.clone()).as_slice()); 
 		self.tokens.push(ParserToken::Symbol(self.token.clone()));
 		self.token = String::new();
 	}
@@ -111,7 +113,7 @@ pub fn parse_lines(code_str: &str) -> Vec<ParserToken> {
 }
 
 pub fn parse_line(code_str: &str) -> ParserToken {
-	println!("parsing: {}", code_str);
+	debugln(format!("parsing: {}", code_str).as_slice()); 
 	let mut buf = code_str.chars().fold(ParserBuffer::new(), |acc, elem| {
 		let mut acc_copy = acc;
 		match elem {
@@ -119,6 +121,7 @@ pub fn parse_line(code_str: &str) -> ParserToken {
 			'(' => acc_copy.push_open_paren(),
 			')' => acc_copy.push_close_paren(),
 			'\'' => acc_copy.push_quote(),
+			'\n' | '\t' => {},
 			c => acc_copy.push_char(c),
 		};
 		acc_copy

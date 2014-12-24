@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use types::{LispToken, LispFunc};
+use init::init_functs;
 
 pub struct ExecutionEnvironment<'a> {
     variables: HashMap<&'a str, LispToken>,
@@ -8,18 +9,17 @@ pub struct ExecutionEnvironment<'a> {
 
 impl<'a> ExecutionEnvironment<'a> {
 	pub fn new() -> ExecutionEnvironment<'a> {
-		let functs = HashMap::new();
-		// functs.insert("+", |ee, args| {
-			
-		// });
+		let mut functs = HashMap::new();
+		let mut vars = HashMap::new();
+		init_functs(&mut functs);
 
 		ExecutionEnvironment {
-			variables: HashMap::new(),
+			variables: vars,
 			functions: functs
 		}
 	}
 
-	pub fn exec(&mut self, script: Vec<LispToken>) -> Vec<LispToken> {
+	pub fn exec(&self, script: Vec<LispToken>) -> Vec<LispToken> {
 		script.iter()
 			.map(|token| self.var_map(token))
 			.map(|token| self.eval_expr(&token))
@@ -35,8 +35,8 @@ impl<'a> ExecutionEnvironment<'a> {
 	}
 
 	fn eval_expr(&self, token: &LispToken) -> LispToken {
-		println!("Parsing:");
-		token.pretty_print(&String::new());
+		println!("Evalutating :"); //DEBUG
+		token.pretty_print(&String::new()); //DEBUG
 		match token {
 			&LispToken::Executable(ref f, ref a) => 
 				self.get_fn( f.as_slice() ).unwrap()
@@ -45,17 +45,17 @@ impl<'a> ExecutionEnvironment<'a> {
 		}
 	}
 
-	pub fn get_var(&self, k: &str) -> Result<LispToken, &str> {
+	pub fn get_var(&self, k: &str) -> Result<LispToken, String> {
 		self.variables
 			.get(k)
 			.map(|lt| lt.clone())
-			.ok_or("Invalid Variable Name")
+			.ok_or(format!("Invalid Variable Error: {}", k))
 	}
 
-	pub fn get_fn(&self, k: &str) -> Result<&LispFunc<'a>, &str> {
+	pub fn get_fn(&self, k: &str) -> Result<&LispFunc<'a>, String> {
 		self.functions
 			.get(k)
-			.ok_or("Invalid Variable Name")
+			.ok_or(format!("Invalid Function Error: {}", k))
 	}
 
 	pub fn add_var(&mut self, k: &'a str, v: LispToken) {

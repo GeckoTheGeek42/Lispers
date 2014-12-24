@@ -3,6 +3,8 @@ use std::str::FromStr;
 use parser::ParserToken;
 use eval::ExecutionEnvironment;
 
+use debugln;
+
 #[deriving(Show, PartialEq)]
 pub enum LispToken {
 	Integer(i32),
@@ -20,26 +22,26 @@ impl LispToken {
 	pub fn pretty_print(&self, indent: &String) {
 		match self {
 			&LispToken::List(ref l) => { 
-				println!("{}<---", indent);
+				debugln(format!("{}[", indent).as_slice());
 				for t in l.iter() { 
 					t.pretty_print(&format!("..{}", indent)) 
 				} 
-				println!("{}--->", indent);
+				debugln(format!("{}]", indent).as_slice());
 			},
 			&LispToken::Executable(ref f, ref a) => {
-				println!("{}Function({}) -->", indent, f);
-				println!("{}.<---", indent);
+				debugln(format!("{}Function({}) -->", indent, f).as_slice());
+				debugln(format!("{}.<", indent).as_slice());
 				for t in a.iter() { 
 					t.pretty_print(&format!("..{}", indent)) 
 				} 
-				println!("{}.--->", indent);
+				debugln(format!("{}.>", indent).as_slice());
 			},
 			t => println!("{}|- {}", indent, t)
 		}
 	}
 
 	pub fn as_str(&self) -> String {
-		match self {
+		match self {	
 			&LispToken::Integer(i) => i.to_string(),
 			&LispToken::FloatingPoint(f) => f.to_string(),
 			&LispToken::Boolean(b) => b.to_string(),
@@ -54,7 +56,11 @@ impl LispToken {
 
 	pub fn from_parser_token(token: &ParserToken) -> LispToken {
 		match token {
-			&ParserToken::Symbol(ref s) => from_str(s.as_slice()).unwrap(),
+			&ParserToken::Symbol(ref s) => {
+				let t = from_str(s.as_slice()).unwrap();
+				debugln(format!("{} => {}", token, t).as_slice()); //DEBUG
+				t
+			},
 			&ParserToken::List(ref l) => LispToken::List( 
 				l.iter()
 					.map( |e| LispToken::from_parser_token(e) )
@@ -91,12 +97,15 @@ impl FromStr for LispToken {
 		let var_re = regex!(r"^&(.*)$");
 		let func_re = regex!(r"^\$(.*)$");
 
-		from_str(s).map(|e| LispToken::Integer(e))
+		match s {
+			"+" | "-" | "*" | "/" => Option::Some(LispToken::Function(s.to_string())),
+			_ => Option::None
+		}.or(from_str(s).map(|e| LispToken::Integer(e)))
 			.or(from_str(s).map(|e| LispToken::FloatingPoint(e)))
 			.or(from_str(s).map(|e| LispToken::Boolean(e)))
-			.or(str_re.captures(s).map(|c| LispToken::String(c.at(1).to_string())))
-			.or(var_re.captures(s).map(|c| LispToken::Variable(c.at(1).to_string())))
-			.or(func_re	.captures(s).map(|c| LispToken::Function(c.at(1).to_string())))
+			.or(str_re.captures(s).map(|c| LispToken::String(c.at(1).unwrap().to_string())))
+			.or(var_re.captures(s).map(|c| LispToken::Variable(c.at(1).unwrap().to_string())))
+			.or(func_re	.captures(s).map(|c| LispToken::Function(c.at(1).unwrap().to_string())))
 			.or(Some(LispToken::Symbol(s.to_string())))
 	}
 }
